@@ -3,7 +3,7 @@ Reaalajas ühisjoonistus – arendusjuhend
 
 Mitu kasutajat joonistavad samal ajal ühel lõuendil. Joonestus liigub otse brauserite vahel (Supabase Realtime Broadcast), valmis jooned salvestatakse andmebaasi, et hilisem liituja näeks olemasolevat pilti.
 
-Stack: Next.js (App Router, TypeScript) + Supabase (Postgres + Realtime) + Vercel.
+Stack: Next.js (App Router, JavaScript) + Supabase (Postgres + Realtime) + Vercel.
 
 Back-end (Supabase)
 
@@ -34,13 +34,15 @@ Front-end (Next.js)
 Struktuur
 
 app/
-  page.tsx                 // avaleht: "Loo tuba" → suunab /room/<id>
-  room/[id]/page.tsx       // server component, annab toa id Canvasile
-  room/[id]/Canvas.tsx     // "use client", joonistus + realtime
-  room/[id]/Toolbar.tsx    // värv, pintsli suurus, tühjenda
+  page.js                  // avaleht: "Loo tuba" → suunab /room/<id>
+  room/[id]/page.js        // server component, annab toa id Canvasile
+  room/[id]/Canvas.js      // "use client", joonistus + realtime
+  room/[id]/Toolbar.js     // värv, pintsli suurus, tühjenda
 lib/
-  supabase.ts              // kliendi init
-  types.ts                 // Seg, StrokeRow
+  supabase.js              // kliendi init
+  types.js                 // Seg, Fill, StrokeRow (JSDoc), roomChannel
+  strokes.js               // loadStrokes, saveStroke, clearRoom
+  floodFill.js             // värvipoti täitmine
 .env.local                 // NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 Canvas töövoog
@@ -57,7 +59,7 @@ Front-end A	Canvas, joonistamine, realtime kuulamine
 Front-end B	Toolbar (värv, suurus, tühjenda, kustutaja), avaleht, stiil
 Lisa	Kursorid (Presence), undo, deploy Vercelisse
 Kokkulepped
-Tüübid ainult failis lib/types.ts.
+Tüübid ainult failis lib/types.js (JSDoc).
 Sündmuste nimed ja payload’i kuju ei muutu ilma kokkuleppeta (seg, clear, fill).
 Üks haru funktsiooni kohta, PR enne mergemist.
 Hilisemad täiendused
