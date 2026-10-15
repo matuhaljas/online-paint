@@ -19,10 +19,13 @@ Realtime kanalid
 
 Kanal: room:<id>
 Sündmused (Broadcast):
-seg – üks joone lõik (payload Seg)
+seg – üks joone lõik (payload Seg + valikuline uid, et teised näeksid joonistaja kursorit; uid DB-sse ei lähe)
 clear – lõuendi tühjendamine
 fill – ala täitmine värvipotiga (payload Fill), salvestatakse kohe eraldi reana
-Valikuline: Presence kursorite jaoks
+cursor – kursori asukoht {uid, x, y}, x: null = lahkus lõuendilt (~20/s, joonistamise ajal ei saadeta)
+chat – vestluse sõnum {id, uid, name, color, text, ts}, DB-sse ei salvestata
+Presence: võti = kasutaja id (uus iga külastusega), payload {name, color, onlineAt}.
+Iga liituja valib vaba kursorivärvi; kui kahel on sama, vahetab hiljem liitunu.
 
 Reeglid
 
@@ -38,11 +41,14 @@ app/
   room/[id]/page.js        // server component, annab toa id Canvasile
   room/[id]/Canvas.js      // "use client", joonistus + realtime
   room/[id]/Toolbar.js     // värv, pintsli suurus, tühjenda
+  room/[id]/Cursors.js     // teiste kursorid lõuendi kohal
+  room/[id]/Sidebar.js     // toas olijad ja vestlus
 lib/
   supabase.js              // kliendi init
   types.js                 // Seg, Fill, StrokeRow (JSDoc), roomChannel
   strokes.js               // loadStrokes, saveStroke, clearRoom
   floodFill.js             // värvipoti täitmine
+  users.js                 // kursorivärvid, nimed, Presence olek
 .env.local                 // NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 Canvas töövoog
@@ -60,7 +66,7 @@ Front-end B	Toolbar (värv, suurus, tühjenda, kustutaja), avaleht, stiil
 Lisa	Kursorid (Presence), undo, deploy Vercelisse
 Kokkulepped
 Tüübid ainult failis lib/types.js (JSDoc).
-Sündmuste nimed ja payload’i kuju ei muutu ilma kokkuleppeta (seg, clear, fill).
+Sündmuste nimed ja payload’i kuju ei muutu ilma kokkuleppeta (seg, clear, fill, cursor, chat, Presence).
 Üks haru funktsiooni kohta, PR enne mergemist.
 Hilisemad täiendused
 
