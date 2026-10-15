@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { floodFill } from "@/lib/floodFill";
+import { clearRoom, loadStrokes, saveStroke } from "@/lib/strokes";
 import { supabase } from "@/lib/supabase";
+import { roomChannel } from "@/lib/types";
 import Toolbar from "./Toolbar";
 
 /** @typedef {import("@/lib/types").Seg} Seg */
 /** @typedef {import("@/lib/types").Fill} Fill */
-/** @typedef {import("@/lib/types").StrokeRow} StrokeRow */
 
 // Fikseeritud suurus, et koordinaadid oleksid kõigil samad. Skaleerimine käib CSS-iga.
 const WIDTH = 1000;
@@ -76,7 +77,7 @@ export default function Canvas({ roomId }) {
     let clearedWhileLoading = false;
 
     const channel = supabase
-      .channel(`room:${roomId}`)
+      .channel(roomChannel(roomId))
       .on("broadcast", { event: "seg" }, ({ payload }) => {
         if (loaded) drawSeg(ctx, payload);
         else pending.push(payload);
@@ -100,20 +101,16 @@ export default function Canvas({ roomId }) {
       });
     channelRef.current = channel;
 
-    supabase
-      .from("strokes")
-      .select("data")
-      .eq("room", roomId)
-      .order("id")
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (error) {
-          console.error("Joonte laadimine ebaõnnestus:", error.message);
-        } else if (!clearedWhileLoading) {
-          for (const row of /** @type {StrokeRow[]} */ (data)) {
-            for (const item of row.data) drawItem(ctx, item);
-          }
+    loadStrokes(roomId)
+      .then((rows) => {
+        if (!active || clearedWhileLoading) return;
+        for (const row of rows) {
+          for (const item of row.data) drawItem(ctx, item);
         }
+      })
+      .catch((err) => console.error("Joonte laadimine ebaõnnestus:", err.message))
+      .finally(() => {
+        if (!active) return;
         for (const item of pending) drawItem(ctx, item);
         pending = [];
         loaded = true;
@@ -157,11 +154,10 @@ export default function Canvas({ roomId }) {
   function enqueueWrite(label, write) {
     writeQueueRef.current = writeQueueRef.current.then(async () => {
       try {
-        const { error } = await write();
-        if (error) console.error(`${label} ebaõnnestus:`, error.message);
+        await write();
       } catch (err) {
         // Ära lase ühel veal järjekorda lukustada.
-        console.error(`${label} ebaõnnestus:`, err);
+        console.error(`${label} ebaõnnestus:`, err.message ?? err);
       }
     });
   }
@@ -173,9 +169,7 @@ export default function Canvas({ roomId }) {
     if (joinedRef.current) {
       channelRef.current.send({ type: "broadcast", event: "fill", payload: fill });
     }
-    enqueueWrite("Täitmise salvestamine", () =>
-      supabase.from("strokes").insert({ room: roomId, data: [fill] }),
-    );
+    enqueueWrite("Täitmise salvestamine", () => saveStroke(roomId, [fill]));
   }
 
   function handlePointerDown(e) {
@@ -208,9 +202,7 @@ export default function Canvas({ roomId }) {
 
     const data = bufRef.current;
     bufRef.current = [];
-    enqueueWrite("Joone salvestamine", () =>
-      supabase.from("strokes").insert({ room: roomId, data }),
-    );
+    enqueueWrite("Joone salvestamine", () => saveStroke(roomId, data));
   }
 
   function handleClear() {
@@ -219,9 +211,7 @@ export default function Canvas({ roomId }) {
       channelRef.current.send({ type: "broadcast", event: "clear", payload: {} });
     }
     // Kustutame ka DB-st, muidu hiljem liituja näeks tühjendatud pilti uuesti.
-    enqueueWrite("Lõuendi tühjendamine", () =>
-      supabase.from("strokes").delete().eq("room", roomId),
-    );
+    enqueueWrite("Lõuendi tühjendamine", () => clearRoom(roomId));
   }
 
   return (
