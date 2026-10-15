@@ -5,7 +5,7 @@ import { floodFill } from "@/lib/floodFill";
 import { clearRoom, loadStrokes, saveStroke } from "@/lib/strokes";
 import { supabase } from "@/lib/supabase";
 import { roomChannel } from "@/lib/types";
-import { loadName, pickColor, readPeers, saveName } from "@/lib/users";
+import { loadName, pickColor, randomId, readPeers, saveName } from "@/lib/users";
 import Cursors from "./Cursors";
 import Sidebar from "./Sidebar";
 import Toolbar from "./Toolbar";
@@ -96,7 +96,7 @@ export default function Canvas({ roomId }) {
     let clearedWhileLoading = false;
 
     // Igal toa külastusel uus id; nimi püsib localStorage'is.
-    const self = { id: crypto.randomUUID(), name: loadName(), color: null, onlineAt: Date.now() };
+    const self = { id: randomId(), name: loadName(), color: null, onlineAt: Date.now() };
     saveName(self.name);
     meRef.current = self;
 
@@ -329,7 +329,7 @@ export default function Canvas({ roomId }) {
     if (!self?.color) return;
     /** @type {ChatMessage} */
     const msg = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       uid: self.id,
       name: self.name,
       color: self.color,
