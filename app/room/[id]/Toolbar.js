@@ -18,6 +18,25 @@ const STATUS_LABELS = {
   CLOSED: "Ühendus suletud",
 };
 
+function legacyCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  ta.setSelectionRange(0, text.length);
+  let ok = false;
+  try {
+    ok = document.execCommand("copy");
+  } catch {
+    ok = false;
+  }
+  ta.remove();
+  return ok;
+}
+
 export default function Toolbar({
   roomId,
   status,
@@ -32,7 +51,23 @@ export default function Toolbar({
   const [copied, setCopied] = useState(false);
 
   async function copyLink() {
-    await navigator.clipboard.writeText(window.location.href);
+    const url = window.location.href;
+    // navigator.clipboard on olemas ainult turvalises kontekstis (https või localhost).
+    // IP kaudu avatud dev-serveris seda pole, seega varuvariandid.
+    let ok = false;
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        ok = true;
+      }
+    } catch {
+      // proovime allpool vana meetodit
+    }
+    if (!ok) ok = legacyCopy(url);
+    if (!ok) {
+      window.prompt("Kopeeri link:", url);
+      return;
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
