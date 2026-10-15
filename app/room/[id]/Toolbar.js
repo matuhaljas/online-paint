@@ -4,6 +4,12 @@ import { useState } from "react";
 
 const COLORS = ["#111111", "#e11d48", "#f97316", "#eab308", "#16a34a", "#2563eb", "#9333ea"];
 
+const TOOLS = [
+  { id: "brush", label: "Pintsel" },
+  { id: "eraser", label: "Kustutaja" },
+  { id: "fill", label: "Täida" },
+];
+
 const STATUS_LABELS = {
   SUBSCRIBED: "Ühendatud",
   CONNECTING: "Ühendan…",
@@ -19,8 +25,8 @@ export default function Toolbar({
   onColorChange,
   size,
   onSizeChange,
-  erasing,
-  onErasingChange,
+  tool,
+  onToolChange,
   onClear,
 }) {
   const [copied, setCopied] = useState(false);
@@ -44,7 +50,7 @@ export default function Toolbar({
             aria-label={`Värv ${c}`}
             onClick={() => onColorChange(c)}
             className={`size-7 rounded-full ring-offset-2 ring-offset-white transition-shadow dark:ring-offset-zinc-900 ${
-              !erasing && color === c ? "ring-2 ring-zinc-500" : ""
+              tool !== "eraser" && color === c ? "ring-2 ring-zinc-500" : ""
             }`}
             style={{ backgroundColor: c }}
           />
@@ -72,18 +78,21 @@ export default function Toolbar({
       </label>
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-pressed={erasing}
-          onClick={() => onErasingChange(!erasing)}
-          className={`${toolButton} ${
-            erasing
-              ? "bg-foreground text-background"
-              : "hover:bg-black/5 dark:ring-white/15 dark:hover:bg-white/10"
-          }`}
-        >
-          Kustutaja
-        </button>
+        {TOOLS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            aria-pressed={tool === t.id}
+            onClick={() => onToolChange(t.id)}
+            className={`${toolButton} ${
+              tool === t.id
+                ? "bg-foreground text-background"
+                : "hover:bg-black/5 dark:ring-white/15 dark:hover:bg-white/10"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
         <button
           type="button"
           onClick={onClear}

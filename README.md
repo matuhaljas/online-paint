@@ -11,7 +11,7 @@ Tabel strokes
 
 id bigint PK (identity)
 room text – toa id
-data jsonb – lõigu massiiv [{x0,y0,x1,y1,color,size}]
+data jsonb – lõigu massiiv [{x0,y0,x1,y1,color,size}] või täitmine [{type:"fill",x,y,color}]
 created_at timestamptz
 Indeks (room, id), RLS sisse lülitatud (select/insert/delete avatud prototüübi jaoks)
 
@@ -21,6 +21,7 @@ Kanal: room:<id>
 Sündmused (Broadcast):
 seg – üks joone lõik (payload Seg)
 clear – lõuendi tühjendamine
+fill – ala täitmine värvipotiga (payload Fill), salvestatakse kohe eraldi reana
 Valikuline: Presence kursorite jaoks
 
 Reeglid
@@ -57,7 +58,7 @@ Front-end B	Toolbar (värv, suurus, tühjenda, kustutaja), avaleht, stiil
 Lisa	Kursorid (Presence), undo, deploy Vercelisse
 Kokkulepped
 Tüübid ainult failis lib/types.ts.
-Sündmuste nimed ja payload’i kuju ei muutu ilma kokkuleppeta (seg, clear).
+Sündmuste nimed ja payload’i kuju ei muutu ilma kokkuleppeta (seg, clear, fill).
 Üks haru funktsiooni kohta, PR enne mergemist.
 Hilisemad täiendused
 
