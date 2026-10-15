@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+Reaalajas ühisjoonistus – arendusjuhend
+Ülevaade
 
-## Getting Started
+Mitu kasutajat joonistavad samal ajal ühel lõuendil. Joonestus liigub otse brauserite vahel (Supabase Realtime Broadcast), valmis jooned salvestatakse andmebaasi, et hilisem liituja näeks olemasolevat pilti.
 
-First, run the development server:
+Stack: Next.js (App Router, TypeScript) + Supabase (Postgres + Realtime) + Vercel.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Back-end (Supabase)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Tabel strokes
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+id bigint PK (identity)
+room text – toa id
+data jsonb – lõigu massiiv [{x0,y0,x1,y1,color,size}]
+created_at timestamptz
+Indeks (room, id), RLS sisse lülitatud (select/insert/delete avatud prototüübi jaoks)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Realtime kanalid
 
-## Learn More
+Kanal: room:<id>
+Sündmused (Broadcast):
+seg – üks joone lõik (payload Seg)
+clear – lõuendi tühjendamine
+Valikuline: Presence kursorite jaoks
 
-To learn more about Next.js, take a look at the following resources:
+Reeglid
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Broadcast ei kirjuta andmebaasi, DB-sse salvestatakse ainult pointerup peale.
+Kliendi seadistus: realtime: { params: { eventsPerSecond: 60 } }
+Hiljem: autentimine ja RLS-i karmistamine, toa omanikud (rooms tabel).
+Front-end (Next.js)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Struktuur
 
-## Deploy on Vercel
+app/
+  page.tsx                 // avaleht: "Loo tuba" → suunab /room/<id>
+  room/[id]/page.tsx       // server component, annab toa id Canvasile
+  room/[id]/Canvas.tsx     // "use client", joonistus + realtime
+  room/[id]/Toolbar.tsx    // värv, pintsli suurus, tühjenda
+lib/
+  supabase.ts              // kliendi init
+  types.ts                 // Seg, StrokeRow
+.env.local                 // NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Canvas töövoog
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Mountimisel laeb toa olemasolevad strokes ja joonistab need.
+Liitub kanaliga room:<id> ja kuulab seg / clear sündmusi.
+pointerdown/move: joonistab lõigu kohe lokaalselt ja saadab seg Broadcastiga.
+pointerup: salvestab kogu joone (buf) strokes tabelisse.
+Lõuend on fikseeritud suurusega (nt 1000×600), skaleerimine ainult CSS-iga, et koordinaadid oleksid kõigil samad.
+Tööjaotus
+Roll	Ülesanded
+Back-end	SQL skeem, RLS, Realtime seaded, hilisem auth ja rooms
+Front-end A	Canvas, joonistamine, realtime kuulamine
+Front-end B	Toolbar (värv, suurus, tühjenda, kustutaja), avaleht, stiil
+Lisa	Kursorid (Presence), undo, deploy Vercelisse
+Kokkulepped
+Tüübid ainult failis lib/types.ts.
+Sündmuste nimed ja payload’i kuju ei muutu ilma kokkuleppeta (seg, clear).
+Üks haru funktsiooni kohta, PR enne mergemist.
+Hilisemad täiendused
+
+Kustutuskumm, undo/redo, kursorid, mobiilituki parandused, segmentide batchimine (kui on viivitust), autentimine ja privaatsed toad.
