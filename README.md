@@ -62,3 +62,7 @@ Sündmuste nimed ja payload’i kuju ei muutu ilma kokkuleppeta (seg, clear).
 Hilisemad täiendused
 
 Kustutuskumm, undo/redo, kursorid, mobiilituki parandused, segmentide batchimine (kui on viivitust), autentimine ja privaatsed toad.
+
+
+NEXT_PUBLIC_SUPABASE_URL=https://gzdxlldmgiscijqssxbc.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_dCo8X2O1h6hk8rowU5gPGw_BMsIWCp9
